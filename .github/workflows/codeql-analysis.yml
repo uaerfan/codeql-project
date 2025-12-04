@@ -1,49 +1,46 @@
-name: CodeQL Security Analysis
+name: "CodeQL Analysis"
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 3 * * 1'
 
 jobs:
-  codeql-analysis:
-    name: Analyze Java Snippets with CodeQL
+  analyze:
+    name: Analyze Java Code
     runs-on: ubuntu-latest
 
+    permissions:
+      security-events: write
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    # 1. Update the Checkout action to v4 (or later)
+    - name: Checkout repository
+      uses: actions/checkout@v4  # <-- ENSURE THIS IS V4
+      
+    # 2. Update CodeQL actions to v3 (or later)
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3  # <-- ENSURE THIS IS V3
+      with:
+        languages: ${{ matrix.language }}
+        queries: security-and-quality
 
-      # Step 2: Initialize CodeQL
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: java
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3 # <-- ENSURE THIS IS V3
+      
+      # If 'autobuild' fails, use your manual build step here:
+      # - name: Manual Build Step
+      #   run: javac MD5Checksum.java
 
-      # Step 3: Build/Compile the Java file
-      - name: Compile Java snippet
-        run: |
-          javac MD5Checksum.java
 
-      # Step 4: Create CodeQL database
-      - name: Create CodeQL Database
-        run: |
-          codeql database create SO --language=java --command="javac MD5Checksum.java"
-
-      # Step 5: Run CodeQL analysis with the query suite
-      - name: Run CodeQL Analysis
-        run: |
-          codeql database analyze SO \
-          '/opt/hostedtoolcache/CodeQL/0.0.0/x64/qlpacks/codeql/java/qls/java-security-and-quality.qls' \
-          --format=csv \
-          --output='results.csv' \
-          --sarif-category=java
-
-      # Step 6: Upload results as artifact
-      - name: Upload results
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeql-results
-          path: results.csv
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3 # <-- ENSURE THIS IS V3
