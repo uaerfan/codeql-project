@@ -1,43 +1,49 @@
-name: "CodeQL Analysis"
+name: CodeQL Security Analysis
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  schedule:
-    - cron: '0 3 * * 1'
 
 jobs:
-  analyze:
-    name: Analyze Java Code
+  codeql-analysis:
+    name: Analyze Java Snippets with CodeQL
     runs-on: ubuntu-latest
 
-    permissions:
-      security-events: write
-      actions: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java' ]
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        queries: security-and-quality
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # --- START FIX: Manual Build Step ---
-    - name: Manual Build Step
-      run: |
-        # Compiles the single Java file so CodeQL can analyze the compiled code.
-        javac MD5Checksum.java
-    # --- END FIX ---
-      
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      # Step 2: Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: java
+
+      # Step 3: Build/Compile the Java file
+      - name: Compile Java snippet
+        run: |
+          javac MD5Checksum.java
+
+      # Step 4: Create CodeQL database
+      - name: Create CodeQL Database
+        run: |
+          codeql database create SO --language=java --command="javac MD5Checksum.java"
+
+      # Step 5: Run CodeQL analysis with the query suite
+      - name: Run CodeQL Analysis
+        run: |
+          codeql database analyze SO \
+          '/opt/hostedtoolcache/CodeQL/0.0.0/x64/qlpacks/codeql/java/qls/java-security-and-quality.qls' \
+          --format=csv \
+          --output='results.csv' \
+          --sarif-category=java
+
+      # Step 6: Upload results as artifact
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: codeql-results
+          path: results.csv
