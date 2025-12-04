@@ -23,24 +23,21 @@ jobs:
         language: [ 'java' ]
 
     steps:
-    # 1. Update the Checkout action to v4 (or later)
     - name: Checkout repository
-      uses: actions/checkout@v4  # <-- ENSURE THIS IS V4
+      uses: actions/checkout@v4
       
-    # 2. Update CodeQL actions to v3 (or later)
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3  # <-- ENSURE THIS IS V3
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         queries: security-and-quality
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3 # <-- ENSURE THIS IS V3
+    # --- START FIX: Manual Build Step ---
+    - name: Manual Build Step
+      run: |
+        # Compiles the single Java file so CodeQL can analyze the compiled code.
+        javac MD5Checksum.java
+    # --- END FIX ---
       
-      # If 'autobuild' fails, use your manual build step here:
-      # - name: Manual Build Step
-      #   run: javac MD5Checksum.java
-
-
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3 # <-- ENSURE THIS IS V3
+      uses: github/codeql-action/analyze@v3
