@@ -35,10 +35,10 @@ jobs:
 
       # Step 3: Manual Build/Compile the Java file (Fixed from previous runs)
       # This step must successfully generate the .class file for CodeQL to analyze.
-      - name: Compile FileChecksum.java
+      - name: Compile TCPServer.java
         run: |
           # The fix for the illegal character (\u00a0) must be applied to your source file first!
-          javac FileChecksum.java
+          javac TCPServer.java
 
       # Step 4: Perform Analysis (Updated to v3)
       # This runs the queries on the database created during the build and automatically
