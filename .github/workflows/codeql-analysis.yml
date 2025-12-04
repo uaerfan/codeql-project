@@ -36,7 +36,7 @@ jobs:
     - name: Manual Build Step
       run: |
         # Compiles the single Java file so CodeQL can analyze the compiled code.
-        javac hello.java
+        javac MD5Checksum.java
     # --- END FIX ---
       
     - name: Perform CodeQL Analysis
