@@ -1,49 +1,47 @@
-name: CodeQL Security Analysis
+name: "CodeQL Security Analysis"
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    # Optional: schedule a weekly scan
+    - cron: '0 3 * * 1'
 
 jobs:
   codeql-analysis:
-    name: Analyze Java Snippets with CodeQL
+    name: Analyze Java Code
     runs-on: ubuntu-latest
 
-    steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    permissions:
+      # Required to upload results to the GitHub Security tab
+      security-events: write
+      actions: read
 
-      # Step 2: Initialize CodeQL
+    steps:
+      # Step 1: Checkout the repository (Updated to v4)
+      - name: Checkout repository
+        uses: actions/checkout@v4 
+      
+      # Step 2: Initialize CodeQL (Updated to v3)
+      # This downloads CodeQL and hooks into the compiler (javac).
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
+          # Using the standard security and quality queries
+          queries: security-and-quality
 
-      # Step 3: Build/Compile the Java file
-      - name: Compile Java snippet
+      # Step 3: Manual Build/Compile the Java file (Fixed from previous runs)
+      # This step must successfully generate the .class file for CodeQL to analyze.
+      - name: Compile MD5Checksum.java
         run: |
+          # The fix for the illegal character (\u00a0) must be applied to your source file first!
           javac MD5Checksum.java
 
-      # Step 4: Create CodeQL database
-      - name: Create CodeQL Database
-        run: |
-          codeql database create SO --language=java --command="javac MD5Checksum.java"
-
-      # Step 5: Run CodeQL analysis with the query suite
+      # Step 4: Perform Analysis (Updated to v3)
+      # This runs the queries on the database created during the build and automatically
+      # uploads the results (SARIF file) to the Security tab.
       - name: Run CodeQL Analysis
-        run: |
-          codeql database analyze SO \
-          '/opt/hostedtoolcache/CodeQL/0.0.0/x64/qlpacks/codeql/java/qls/java-security-and-quality.qls' \
-          --format=csv \
-          --output='results.csv' \
-          --sarif-category=java
-
-      # Step 6: Upload results as artifact
-      - name: Upload results
-        uses: actions/upload-artifact@v3
-        with:
-          name: codeql-results
-          path: results.csv
+        uses: github/codeql-action/analyze@v3
